@@ -162,8 +162,7 @@ def verif(poids_act):
 
 def classification(poids,lien):
     """Donne le pourcentage de classification d'une image."""
-    image = Image.open(lien)
-    pic = image.resize((200, 300))
+    pic = Image.open(lien)
     img = numpy.array(pic.getdata()).reshape(pic.size[0], pic.size[1], 3)
 
     res = calcul_res(img,poids)
