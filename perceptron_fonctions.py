@@ -9,8 +9,10 @@ from PIL import Image
 def poids_init():
     """Fonction pour créer une nouvelle grille de poids."""
 
+    print("Initialisation des poids")
+
     poids_act = [[[random.random(),random.random(),random.random()] for _ in range(300)] for _ in range(200)]
-    l = pickle(open('poids','rb'))
+    l = pickle.load(open('poids','rb'))
     l.append(poids_act)
     pickle.dump(l,open('poids','wb'))
 
@@ -64,13 +66,13 @@ def val_image(poids,type,num):
 
 
 def entrainement(poids):
-    """Entraîne une grille de poids à l'aide de toutes les fonctions définies plus tôt."""
+    """Entraîne une grille de poids à l'aide de toutes les fonctions définies plus tôt, pour une image."""
     type = random.randint(0,1)
     if type == 1:
-        num = random.randint(0,2070)
+        num = random.randint(0,18577)
         lien = 'dataset/fire/fire_entrainement/'+str(num)+'.png'
     else:
-        num = random.randint(0,3552)
+        num = random.randint(0,13757)
         lien = 'dataset/non_fire/non_fire_entrainement/'+str(num)+'.png'
 
     img = cv2.imread(lien)
@@ -86,21 +88,17 @@ def entrainement(poids):
 
         erreur = type - val
 
-    print("type",type)
-    print(val,1-val)
-
     return poids
 
 def session(nb_image,poids):
     """Lance une session d'entraînement."""
-    temps_deb = time.time()
     for i in range(nb_image):
+        print("train=",i)
         poids = entrainement(poids)
-    temps_fin = time.time()
 
     return poids
 
-def entrainement_tot(nb_session,nb_image):
+def entrainement_total(nb_session,nb_image):
     """lance un gros entrainement, enregistre le temps utilisé, les statistiques etc"""
 
     temps_deb = time.time()
@@ -112,13 +110,22 @@ def entrainement_tot(nb_session,nb_image):
 
     for i_sess in range(nb_session):
         poids = session(nb_image,poids)
-        stat_act.append(verif(poids))
+        print("fin session :",i_sess+1)
+        result = verif(poids)
+        stat_act.append(result)
 
-    p[-1] = poids
-    s[-1] = stat_act
 
-    pickle.dump(p,open('poids','wb'))
-    pickle.dump(s,open('stat','wb'))
+        p[-1] = poids
+        s[-1] = stat_act
+
+        pickle.dump(p,open('poids','wb'))
+        pickle.dump(s,open('stat','wb'))
+        
+    temps_fin = time.time()
+
+    print(temps_fin - temps_deb)
+
+    return
 
 
 
@@ -128,12 +135,14 @@ def verif(poids_act):
     faux_pos = 0
     faux_neg = 0
 
-    for i in range(100):
-        print(i)
+    for i in range(500):
+
+        print('verif=',i)
+
         type = random.randint(0,1)
 
         if type == 1:
-            num = random.randint(0,1000)
+            num = random.randint(0,6418)
             val = val_image(poids_act,type,num)
             if val >= 0.5:
                 juste += 1
@@ -141,7 +150,7 @@ def verif(poids_act):
                 faux_neg += 1
 
         else:
-            num = random.randint(0,1500)
+            num = random.randint(0,3869)
             val = val_image(poids_act,type,num)
             if val < 0.5:
                 juste += 1
@@ -149,16 +158,9 @@ def verif(poids_act):
                 faux_pos += 1
 
 
-    result = (juste/10,faux_pos,faux_neg)
-
-    with open('result_entrainement','rb') as f1:
-        result_ent = pickle.load(f1)
-
-    result_ent[-1].append(result)
-    with open('result_entrainement','wb') as f1:
-        pickle.dump(result_ent,f1)
-
-    return None
+    result = (juste/5,faux_pos/5,faux_neg/5)
+    print("accuracy,faux_pos,faux_neg:",result)
+    return result
 
 def classification(poids,lien):
     """Donne le pourcentage de classification d'une image."""
